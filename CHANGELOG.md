@@ -2,6 +2,12 @@
 
 本文件记录 miaodesign（AI 游戏素材平台）的版本演进。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [v1.2.1] - 2026-09-19
+
+### Added
+- 服务端演示模式：`DEMO_MODE=1` 启动时只读（禁改配置、禁取 Key），用于发布无账号演示版（防 Key 泄露 / 防白嫖额度）
+- 发布首个在线演示版（脱敏配置，无 API Key）
+
 ## [v1.2.0] - 2026-09-19
 
 ### Added

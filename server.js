@@ -10,6 +10,8 @@ const PUBLIC = path.join(ROOT, 'public');
 const CONFIG_PATH = path.join(ROOT, 'config.json');
 const STYLELIB_PATH = path.join(ROOT, 'stylelib.json');
 const PORT = process.env.PORT || 8787;
+// 演示模式：DEMO_MODE=1 时只读（禁改配置、禁取 Key），用于发布无账号演示版
+const DEMO = process.env.DEMO_MODE === '1';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -316,6 +318,15 @@ const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://localhost');
   const p = u.pathname;
   try {
+    // 演示模式：拦截会写文件或泄露 Key 的操作，其余只读放行
+    if (DEMO) {
+      const writeOp = (p === '/api/config/save' || p === '/api/promptlib' || p === '/api/styles' || p === '/api/config/test') && req.method === 'POST';
+      const keyOp = p === '/api/config/key' && req.method === 'GET';
+      if (writeOp || keyOp) {
+        json(res, 403, { error: '这是演示版（只读），无法修改配置或查看 Key' });
+        return;
+      }
+    }
     if (p === '/api/config' && req.method === 'GET') {
       const cfg = loadConfig();
       const safe = JSON.parse(JSON.stringify(cfg));
