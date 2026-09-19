@@ -1,0 +1,44 @@
+{
+  "styles": [
+    { "id": "xianxia", "name": "仙侠", "prompt": "仙侠水墨风，墨色晕染，云雾缭绕，飘渺空灵，宣纸质感，淡雅配色，飞白笔触，仙气氤氲" },
+    { "id": "anime", "name": "二次元", "prompt": "日式赛璐璐动画风，明快高饱和配色，精细线稿，干净平涂，柔和光影，动漫质感" },
+    { "id": "pixel", "name": "像素", "prompt": "复古像素点阵风，8-bit 颗粒感，清晰色块，有限调色板，游戏像素艺术" },
+    { "id": "guofeng", "name": "国风", "prompt": "国风水墨风，山水留白意境，宣纸肌理，古雅配色，写意笔法" },
+    { "id": "cyberpunk", "name": "赛博朋克", "prompt": "赛博朋克风，霓虹灯牌，紫蓝冷调，金属与玻璃质感，高对比光影，未来都市氛围" },
+    { "id": "dark", "name": "暗黑奇幻", "prompt": "暗黑奇幻风，哥特厚重暗调，冷峻氛围，电影级明暗对比，史诗神秘感" },
+    { "id": "chibi", "name": "Q版可爱", "prompt": "Q版卡通风，圆润比例，糖果配色，软萌治愈，简洁扁平" },
+    { "id": "steampunk", "name": "蒸汽朋克", "prompt": "蒸汽朋克风，黄铜齿轮机械质感，维多利亚复古，做旧金属，暖棕金配色" }
+  ],
+  "assetTypes": [
+    { "id": "avatar", "name": "头像", "prompt": "半身头像，干净纯色背景，主体居中，高细节特写，柔和光线" },
+    { "id": "portrait", "name": "角色立绘", "prompt": "全身立绘，完整角色设定，动态姿势，电影级打光，精致细节" },
+    { "id": "wallpaper", "name": "壁纸", "prompt": "横版全景，前景中景远景层次，氛围光，无文字无水印" },
+    { "id": "emoji", "name": "表情包", "prompt": "夸张表情，情绪强烈，主体突出，纯色背景，适合聊天表情" },
+    { "id": "scene", "name": "游戏场景", "prompt": "横版游戏场景，层次丰富，可平铺延伸，透视空间感" },
+    { "id": "ui", "name": "UI图标", "prompt": "扁平化图标，描边清晰，风格统一，纯色背景，游戏界面用" },
+    { "id": "pixel_char", "name": "像素角色", "prompt": "游戏角色 sprite，全身，纯色背景，网格对齐" },
+    { "id": "pixel_prop", "name": "像素道具", "prompt": "单件道具图标，居中，纯色背景，细节清晰" },
+    { "id": "pixel_pack", "name": "像素素材包", "prompt": "多件道具网格排列，4x3 网格，每格一件独立道具，风格统一，纯色背景" },
+    { "id": "pixel_tileset", "name": "像素图块", "prompt": "tileset 图块，四方连续可平铺，游戏地图用，纯色背景" }
+  ],
+  "models": [
+    {
+      "id": "gptimage",
+      "name": "GPT-image-2",
+      "provider": "openai",
+      "baseUrl": "https://open.cherryin.net/v1",
+      "model": "openai/gpt-image-2",
+      "apiKey": "",
+      "verified": false
+    },
+    {
+      "id": "chat_enhance",
+      "name": "GPT-4o（优化/分析）",
+      "provider": "chat",
+      "baseUrl": "https://open.cherryin.net/v1",
+      "model": "openai/gpt-4o",
+      "apiKey": "",
+      "verified": false
+    }
+  ]
+}

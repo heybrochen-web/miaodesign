@@ -1,0 +1,204 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI 游戏素材平台 · 自用版</title>
+<link rel="stylesheet" href="style.css">
+</head><body>
+<div class="app">
+  <header>
+    <div>
+      <h1>🎮 AI 游戏素材平台 · 自用版</h1>
+      <div class="sub">聚合多模型 · 游戏向模板 · 本地生成 · 数据只存在你自己电脑</div>
+    </div>
+    <div class="hdr-actions">
+      <span class="badge">MVP · 图片先行</span>
+      <button class="btn settings" id="promptLibBtn" title="编辑风格词 + 素材类型规格，可随时调优">🧪 配方管理</button>
+      <button class="btn settings" id="styleLibBtn" title="上传图片分析风格，形成可复用风格卡">🎨 风格工坊</button>
+      <button class="btn settings" id="settingsBtn" title="配置模型 API Key">⚙️ API 管理</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- 左侧：生成控制面板 -->
+    <div class="panel">
+      <h2><span class="dot"></span>生成控制台</h2>
+
+      <div class="field">
+        <label>游戏风格</label>
+        <div class="chips" id="styleChips"></div>
+        <div class="chips custom" id="customStyleChips" style="margin-top:6px"></div>
+        <div class="stylelib-link"><a href="#" id="openStyleLibLink">🎨 打开风格工坊 · 上传图片复刻自定义风格</a></div>
+      </div>
+
+      <div class="field">
+        <label>素材类型</label>
+        <div class="chips" id="typeChips"></div>
+      </div>
+
+      <div class="field">
+        <label>角色卡（锁定形象一致性，可选）</label>
+        <div class="rolebar">
+          <select id="roleSel"><option value="">不使用角色卡</option></select>
+          <button class="mini" id="addRole">+ 新建</button>
+          <button class="mini" id="delRole">删</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>描述（想生成什么）</label>
+        <div class="prompt-wrap">
+          <textarea id="prompt" placeholder="例：一个白发红衣的剑客，腰间佩剑，站在雪山顶，眼神凌厉"></textarea>
+          <button class="opt-fab" id="optimizeBtn" title="AI 优化：解析要素 + 自动匹配风格/类型 + 润色提示词">✨</button>
+        </div>
+        <div class="prompt-preview" id="preview">拼装后的提示词会显示在这里…</div>
+      </div>
+
+      <div class="field row2">
+        <div style="flex:1"><label>模型</label><select id="modelSel"></select></div>
+        <div style="width:110px"><label>比例</label><select id="ratioSel">
+          <option value="1:1">1:1 方图</option>
+          <option value="16:9">16:9 横版</option>
+          <option value="9:16">9:16 竖版</option>
+          <option value="4:3">4:3</option>
+          <option value="3:4">3:4</option>
+        </select></div>
+      </div>
+
+      <div class="field" id="optimizeResult" style="display:none"></div>
+
+      <div class="genbar row2">
+        <button class="btn primary" id="genBtn">生成</button>
+      </div>
+    </div>
+
+    <!-- 右侧：结果画廊 -->
+    <div class="panel">
+      <div class="gallery-header">
+        <h2><span class="dot"></span>生成结果</h2>
+        <span class="count" id="count">共 0 张 · <a href="#" id="clearBtn" style="color:var(--err)">清空</a></span>
+      </div>
+      <div id="loading"></div>
+      <div class="gallery" id="gallery"></div>
+      <div class="empty" id="empty">还没有生成记录。选好风格和类型，写一句描述，点「生成」开始。</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="modal"></div>
+
+<!-- API 管理面板（覆盖层） -->
+<div class="settings-mask" id="settingsMask" style="display:none">
+  <div class="settings-panel">
+    <div class="settings-head">
+      <div>
+        <h2>⚙️ API 管理</h2>
+        <div class="settings-sub">配置各模型的 API Key 与地址，保存后立即生效（无需重启），数据只存本地 config.json</div>
+      </div>
+      <button class="mini" id="closeSettings">✕</button>
+    </div>
+
+    <div class="settings-tips">
+      <div><b>怎么填：</b></div>
+      <ul>
+        <li><b>火山 Seedream</b>：去火山引擎方舟控制台开通「即梦/Seedream」模型，拿 API Key；baseUrl 保持 <code>https://ark.cn-beijing.volces.com/api/v3</code>，模型填接入点 ID（如 <code>doubao-seedream-4-0-250828</code>）。</li>
+        <li><b>阿里万相</b>：阿里云百炼（DashScope）开通「通义万相」，拿 API Key；模型填 <code>wanx2.1-t2i-turbo</code>。</li>
+        <li><b>GPT-image / Gemini</b>：填你自己的 new-api 网关地址和 Key（任意 OpenAI 兼容中转都行）。</li>
+        <li><b>提示词润色 LLM</b>：任意 OpenAI 兼容的对话模型（DeepSeek / 豆包 / Kimi），用于「✨润色提示词」功能。</li>
+      </ul>
+    </div>
+
+    <!-- 快速接入：选供应商 → 填 Key → 一键接入 -->
+    <div class="quick-connect">
+      <div class="qc-title">🚀 快速接入（推荐：选平台 → 粘 Key → 一键搞定）</div>
+      <div class="qc-row">
+        <select id="supplierSel"></select>
+        <input id="quickBaseUrl" placeholder="中转网关地址（选「自定义」时才需要填）" style="display:none">
+      </div>
+      <div class="qc-row">
+        <input id="quickKey" type="password" placeholder="粘贴 API Key（一把 Key 可接入多个模型）">
+        <button class="btn primary" id="quickConnect">接入并验证</button>
+      </div>
+      <div class="qc-hint" id="quickHint"></div>
+      <div id="quickResult"></div>
+      <div id="quickModelPicker" style="display:none"></div>
+    </div>
+
+    <div class="mc-sep">已接入的模型 <span class="mc-sep-sub">（点「高级」可改地址/模型名）</span></div>
+
+    <div id="modelList" class="model-list"></div>
+
+    <div class="settings-actions">
+      <button class="btn ghost" id="addModelBtn">+ 手动新增模型</button>
+      <div style="flex:1"></div>
+      <button class="btn ghost" id="cancelSettings">取消</button>
+      <button class="btn primary" id="saveSettings">保存配置</button>
+    </div>
+  </div>
+</div>
+
+<!-- 风格工坊面板 -->
+<div class="settings-mask" id="styleLibMask" style="display:none">
+  <div class="settings-panel">
+    <div class="settings-head">
+      <div>
+        <h2>🎨 风格工坊</h2>
+        <div class="settings-sub">上传一张你喜欢的风格参考图 → AI 分析风格特征 → 存成可复用「风格卡」，生成时一键套用（还会把原图作为参考图传给 Seedream 等支持图生图的模型，风格更贴近）</div>
+      </div>
+      <button class="mini" id="closeStyleLib">✕</button>
+    </div>
+
+    <div class="sl-upload" id="uploadZone">
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+      <div class="upload-inner">📷 点击选择或拖拽图片到这里<br><span>单张参考图即可 · 自动压缩后交给视觉模型分析</span></div>
+    </div>
+
+    <div id="analyzeResult" style="display:none">
+      <div class="sl-preview">
+        <img id="previewImg" alt="参考图">
+        <div class="sl-form">
+          <div class="mc-field"><label>风格名称（可改）</label><input id="cardName"></div>
+          <div class="mc-field"><label>风格总结</label><input id="cardSummary"></div>
+          <div class="mc-field"><label>特征标签</label><div class="chips feat" id="cardFeatures"></div></div>
+          <div class="mc-field"><label>风格修饰词（生成时拼入提示词，可改）</label><textarea id="cardWords" style="min-height:64px"></textarea></div>
+          <div class="mc-field"><label>像素风建议</label><input id="cardPixel" readonly></div>
+        </div>
+      </div>
+      <div class="sl-actions">
+        <button class="btn ghost" id="discardCard">重新分析</button>
+        <div style="flex:1"></div>
+        <button class="btn primary" id="saveCard">保存风格卡</button>
+      </div>
+    </div>
+
+    <h3 class="sl-libtitle">我的风格库</h3>
+    <div id="myStyles" class="my-styles"></div>
+  </div>
+</div>
+
+<!-- 配方管理面板 -->
+<div class="settings-mask" id="promptLibMask" style="display:none">
+  <div class="settings-panel">
+    <div class="settings-head">
+      <div>
+        <h2>🧪 配方管理</h2>
+        <div class="settings-sub">风格词 = 美术风格（配色/线条/光影/质感）；素材类型 = 规格呈现（构图/背景/用途）。两者正交，分别调优。</div>
+      </div>
+      <button class="mini" id="closePromptLib">✕</button>
+    </div>
+    <div class="pl-note">💡 原则：<b>风格词只写「怎么画」，不写「画什么」</b>（主体交给描述框）；<b>类型词只写「输出成什么规格」</b>。这样组合最干净、最好调。</div>
+    <h3 class="pl-title">🎨 风格（美术风格词）</h3>
+    <div id="plStyles" class="pl-list"></div>
+    <h3 class="pl-title">📐 素材类型（规格 / 呈现）</h3>
+    <div id="plTypes" class="pl-list"></div>
+    <div class="settings-actions">
+      <button class="btn ghost" id="plReset">恢复默认</button>
+      <div style="flex:1"></div>
+      <button class="btn ghost" id="closePromptLib2">取消</button>
+      <button class="btn primary" id="savePromptLib">保存配方</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body></html>
