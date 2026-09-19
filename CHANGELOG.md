@@ -2,6 +2,11 @@
 
 本文件记录 miaodesign（AI 游戏素材平台）的版本演进。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [v1.3.2] - 2026-09-19
+
+### Fixed
+- **页面打不开问题**：登录 SDK 原先通过 `cdn.jsdelivr.net` 同步阻塞加载，国内网络访问 jsdelivr 常被墙/超时，导致整页卡在"加载中"。现将 SDK 下载本地化为 `public/wbc-sdk.js`，`index.html` / `canvas.html` 改引用本地文件，彻底摆脱 CDN 依赖
+
 ## [v1.3.1] - 2026-09-19
 
 ### Changed
