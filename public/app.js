@@ -13,6 +13,7 @@ const state = {
   pendingCard: null,
   roles: JSON.parse(localStorage.getItem('aap_roles') || '[]'),
   history: JSON.parse(localStorage.getItem('aap_history') || '[]'),
+  modelTab: 'all',
 };
 
 // ---------- 内置风格参考图 ----------
@@ -516,13 +517,32 @@ const SUPPLIERS = [
 function esc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
-function openSettings() { $('#settingsMask').style.display = 'flex'; renderModelList(); }
+function openSettings() { $('#settingsMask').style.display = 'flex'; state.modelTab = 'all'; syncModelTabs(); renderModelList(); }
 function closeSettings() { $('#settingsMask').style.display = 'none'; }
+
+// 模型分类：provider=chat → 文字（LLM），其余 → 图片（生图）
+function modelKind(m) { return m.provider === 'chat' ? 'chat' : 'image'; }
+function syncModelTabs() {
+  document.querySelectorAll('#modelTabs .mc-tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === state.modelTab));
+}
+document.getElementById('modelTabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('.mc-tab');
+  if (!btn) return;
+  state.modelTab = btn.dataset.tab;
+  syncModelTabs();
+  renderModelList();
+});
 
 function renderModelList() {
   const box = $('#modelList');
   box.innerHTML = '';
+  const shown = state.models.filter((m) => state.modelTab === 'all' || modelKind(m) === state.modelTab);
+  if (!shown.length) {
+    box.innerHTML = `<div class="mc-empty">${state.modelTab === 'chat' ? '还没有文字模型（对话 LLM，用于提示词优化/风格分析）' : '还没有图片模型（生图用）'}——用上方「快速接入」或「手动新增模型」添加。</div>`;
+    return;
+  }
   state.models.forEach((m, idx) => {
+    if (state.modelTab !== 'all' && modelKind(m) !== state.modelTab) return;
     const card = document.createElement('div');
     card.className = 'model-card';
     card.dataset.idx = String(idx);

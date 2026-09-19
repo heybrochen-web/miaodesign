@@ -124,7 +124,14 @@
       <div id="quickModelPicker" style="display:none"></div>
     </div>
 
-    <div class="mc-sep">已接入的模型 <span class="mc-sep-sub">（点「高级」可改地址/模型名）</span></div>
+    <div class="mc-sep-row">
+      <div class="mc-tabs" id="modelTabs">
+        <button class="mc-tab on" data-tab="all">全部</button>
+        <button class="mc-tab" data-tab="image">🖼️ 图片</button>
+        <button class="mc-tab" data-tab="chat">💬 文字</button>
+      </div>
+      <span class="mc-sep-sub">点「高级」可改地址/模型名</span>
+    </div>
 
     <div id="modelList" class="model-list"></div>
 

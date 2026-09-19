@@ -143,6 +143,12 @@ select{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10
 .qc-msg.fail{background:#fdecea;color:var(--err)}
 .mc-sep{font-size:13px;font-weight:700;color:var(--ink);margin:16px 0 10px;border-top:1px solid var(--line);padding-top:14px}
 .mc-sep-sub{font-size:11.5px;color:var(--sub);font-weight:400;margin-left:6px}
+.mc-sep-row{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px;border-top:1px solid var(--line);padding-top:12px}
+.mc-tabs{display:flex;gap:6px}
+.mc-tab{font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:18px;border:1px solid var(--line);background:#fff;color:var(--sub);cursor:pointer;transition:all .12s}
+.mc-tab:hover{border-color:var(--brand);color:var(--brand)}
+.mc-tab.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.mc-empty{font-size:12.5px;color:var(--sub);background:#f7f8fb;border:1px dashed var(--line);border-radius:12px;padding:18px;text-align:center;line-height:1.6}
 .mc-keydot{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px}
 .mc-keydot.on{background:#e6f4ea;color:var(--ok)}
 .mc-keydot.off{background:#f0f1f5;color:var(--sub)}

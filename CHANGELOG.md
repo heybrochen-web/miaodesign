@@ -2,6 +2,11 @@
 
 本文件记录 miaodesign（AI 游戏素材平台）的版本演进。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [v1.1.0] - 2026-09-19
+
+### Added
+- API 管理「已接入的模型」区新增类型 tab：全部 / 🖼️ 图片 / 💬 文字（按 provider 分类：chat=文字 LLM，其余=生图模型），空分类有引导提示
+
 ## [v1.0.0] - 2026-09-19
 
 首个入库版本。此前迭代（MVP 生图 → 风格/类型参考图 → 配方管理面板 → prompt 优化管线）合并为本基线。
