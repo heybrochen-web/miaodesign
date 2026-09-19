@@ -12,6 +12,9 @@ const STYLELIB_PATH = path.join(ROOT, 'stylelib.json');
 const PORT = process.env.PORT || 8787;
 // 演示模式：DEMO_MODE=1 时只读（禁改配置、禁取 Key），用于发布无账号演示版
 const DEMO = process.env.DEMO_MODE === '1';
+// 云服务接入配置：供前端初始化 WorkBuddy Cloud SDK（邮箱登录 + 数据跨设备同步）
+const CLOUD_ENDPOINT = process.env.CLOUD_ENDPOINT || 'https://miaodesign.app.workbuddy.host';
+const CLOUD_PUBLISHABLE_KEY = process.env.CLOUD_PUBLISHABLE_KEY || 'wbpk_jtHGYCA6g1wtr4mdEmCIMm_EWsqUYFbz3t5Y16qkhGakRR2Zs7XelAb';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -327,6 +330,10 @@ const server = http.createServer(async (req, res) => {
         return;
       }
     }
+    if (p === '/api/cloudconfig' && req.method === 'GET') {
+      json(res, 200, { endpoint: CLOUD_ENDPOINT, publishableKey: CLOUD_PUBLISHABLE_KEY });
+      return;
+    }
     if (p === '/api/config' && req.method === 'GET') {
       const cfg = loadConfig();
       const safe = JSON.parse(JSON.stringify(cfg));
@@ -480,15 +487,18 @@ const server = http.createServer(async (req, res) => {
       const cfg = loadConfig();
       const model = (cfg.models || []).find((m) => m.id === body.modelId);
       if (!model) throw new Error('模型不存在: ' + body.modelId);
-      if (!model.apiKey) throw new Error('模型「' + model.name + '」未配置 API Key，请到「⚙️ API 管理」里配置');
+      // BYOK：请求体可临时携带 apiKey（存浏览器本地），优先于服务端 config 里的 Key
+      const apiKey = String(body.apiKey || '').trim() || model.apiKey;
+      if (!apiKey) throw new Error('模型「' + model.name + '」未配置 API Key，请在「⚙️ API 管理」填入（Key 仅存本机浏览器，不上传服务器）');
+      const effModel = Object.assign({}, model, { apiKey });
       // 风格卡参考图（仅 openai 兼容图片模型支持参考图）
       if (body.styleCardId) {
         const card = loadStylelib().styles.find((s) => s.id === body.styleCardId);
-        if (card && card.refImage && model.provider === 'openai') body.refImage = card.refImage;
+        if (card && card.refImage && effModel.provider === 'openai') body.refImage = card.refImage;
       }
-      const out = model.provider === 'dashscope'
-        ? await dashscopeImage(model, body)
-        : await openaiImage(model, body);
+      const out = effModel.provider === 'dashscope'
+        ? await dashscopeImage(effModel, body)
+        : await openaiImage(effModel, body);
       json(res, 200, out);
       return;
     }
@@ -496,8 +506,10 @@ const server = http.createServer(async (req, res) => {
       const body = JSON.parse((await readBody(req)) || '{}');
       const cfg = loadConfig();
       const model = (cfg.models || []).find((m) => m.provider === 'chat');
-      if (!model || !model.apiKey) throw new Error('未配置「提示词润色」LLM，请在 config.json 里加一个 provider=chat 的模型并填 Key');
-      const out = await chatCompletion(model, body);
+      if (!model) throw new Error('未配置「提示词润色」LLM，请在 config.json 里加一个 provider=chat 的模型');
+      const apiKey = String(body.apiKey || '').trim() || model.apiKey;
+      if (!apiKey) throw new Error('未配置「提示词润色」LLM 的 Key，请在「⚙️ API 管理」填入');
+      const out = await chatCompletion(Object.assign({}, model, { apiKey }), body);
       json(res, 200, out);
       return;
     }
@@ -506,12 +518,14 @@ const server = http.createServer(async (req, res) => {
       if (!body.text || !String(body.text).trim()) throw new Error('请先输入一句描述再优化');
       const cfg = loadConfig();
       const model = (cfg.models || []).find((m) => m.provider === 'chat');
-      if (!model || !model.apiKey) throw new Error('未配置「Prompt 优化」LLM（provider=chat），请在「⚙️ API 管理」配置 GPT-4o');
+      if (!model) throw new Error('未配置「Prompt 优化」LLM（provider=chat），请在「⚙️ API 管理」配置 GPT-4o');
+      const apiKey = String(body.apiKey || '').trim() || model.apiKey;
+      if (!apiKey) throw new Error('未配置「Prompt 优化」LLM 的 Key，请在「⚙️ API 管理」填入');
       const styles = (cfg.styles || []).map((s) => (typeof s === 'string' ? { id: s, name: s } : s));
       const types = Array.isArray(cfg.assetTypes)
         ? cfg.assetTypes
         : Object.keys(cfg.assetTypes || {}).map((k) => ({ id: k, name: k }));
-      const out = await optimizePrompt(model, String(body.text).trim(), styles, types);
+      const out = await optimizePrompt(Object.assign({}, model, { apiKey }), String(body.text).trim(), styles, types);
       json(res, 200, out);
       return;
     }

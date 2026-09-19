@@ -23,6 +23,15 @@
   ],
   "models": [
     {
+      "id": "seedream40",
+      "name": "Seedream 4.0",
+      "provider": "openai",
+      "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+      "model": "doubao-seedream-4-0-250828",
+      "apiKey": "",
+      "verified": false
+    },
+    {
       "id": "gptimage",
       "name": "GPT-image-2",
       "provider": "openai",
@@ -37,6 +46,15 @@
       "provider": "chat",
       "baseUrl": "https://open.cherryin.net/v1",
       "model": "openai/gpt-4o",
+      "apiKey": "",
+      "verified": false
+    },
+    {
+      "id": "m_1789794698319",
+      "name": "Seedream 5.0",
+      "provider": "openai",
+      "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+      "model": "doubao-seedream-5-0-260128",
       "apiKey": "",
       "verified": false
     }

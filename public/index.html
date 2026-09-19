@@ -8,9 +8,10 @@
   <header>
     <div>
       <h1>🎮 AI 游戏素材平台 · 自用版</h1>
-      <div class="sub">聚合多模型 · 游戏向模板 · 本地生成 · 数据只存在你自己电脑</div>
+      <div class="sub">聚合多模型 · 游戏向模板 · 登录后跨设备同步</div>
     </div>
     <div class="hdr-actions">
+      <button class="btn settings" id="authBtn" title="登录后多设备同步">🔐 登录</button>
       <div class="projbar">
         <select id="projectSel" title="切换项目（历史/角色卡/画布按项目隔离）"></select>
         <button class="mini" id="projNew" title="新建项目">＋</button>
@@ -238,6 +239,35 @@
   </div>
 </div>
 
+<!-- 登录弹窗 -->
+<div class="auth-mask" id="authMask" style="display:none">
+  <div class="auth-card">
+    <div class="auth-head">
+      <span class="auth-title">🔐 登录同步</span>
+      <button class="mini" id="authClose">✕</button>
+    </div>
+    <p class="auth-sub">登录后，生成历史 / 风格卡 / 画布会在多台设备间自动同步（API Key 仍只存本机，不上云）</p>
+
+    <div class="auth-step" id="authStepEmail">
+      <label>邮箱</label>
+      <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email">
+      <button class="btn primary" id="authSendBtn">发送验证码</button>
+    </div>
+
+    <div class="auth-step" id="authStepCode" style="display:none">
+      <label>验证码（已发送至 <b id="authEmailShow"></b>）</label>
+      <input type="text" id="authCode" placeholder="6 位验证码" maxlength="8" autocomplete="one-time-code">
+      <button class="btn primary" id="authVerifyBtn">验证并登录</button>
+      <button class="btn ghost" id="authResendBtn">重新发送</button>
+    </div>
+
+    <div class="auth-status" id="authStatus"></div>
+    <p class="auth-note">未注册的邮箱将自动创建账号并登录。</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+<script src="sync.js"></script>
 <script src="app.js"></script>
 <script src="canvas.js"></script>
 </body></html>

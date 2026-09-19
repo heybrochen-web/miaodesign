@@ -2,6 +2,17 @@
 
 本文件记录 miaodesign（AI 游戏素材平台）的版本演进。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [v1.3.0] - 2026-09-19
+
+### Added
+- **邮箱登录 + 数据跨设备同步**：接入 WorkBuddy 云服务（腾讯云 CloudBase 托管），邮箱验证码登录（自动注册），生成历史 / 角色卡 / 画布 / 项目列表跨设备云端同步，按 `owner_id` 隔离（RLS 强制）
+- **BYOK（Key 本地配，永不上云）**：API Key 只存本机浏览器 `localStorage`（用非 `aap_` 前缀的 `device_keys`，不被同步层上云），生图/优化时随请求临时携带，服务端不落盘
+- 同步层采用 localStorage 无侵入代理（`public/sync.js`），现有业务代码零改动即可自动上云
+- `server.js` 新增 `/api/cloudconfig`（供前端初始化 SDK）+ `/api/generate` `/api/optimize` `/api/enhance` 支持请求体 `apiKey` 覆盖
+
+### Changed
+- 线上部署由「演示模式只读」改为正常模式（config 脱敏、Key 空，配合 BYOK 使用）；线上为 4 个预设模型（Seedream 4.0/5.0 + GPT-image-2 + GPT-4o）
+
 ## [v1.2.1] - 2026-09-19
 
 ### Added

@@ -47,6 +47,20 @@ function histKey() { return 'aap_hist_' + state.projectId; }
 function rolesKey() { return 'aap_roles_' + state.projectId; }
 window.getAppProjectId = () => state.projectId;
 
+// ---------- BYOK：API Key 只存本机浏览器（用非 aap_ 前缀，避免被同步层上云） ----------
+const DEVICE_KEYS = 'device_keys';
+function getLocalKey(modelId) {
+  try { return (JSON.parse(localStorage.getItem(DEVICE_KEYS) || '{}')[modelId]) || ''; } catch (e) { return ''; }
+}
+function setLocalKey(modelId, key) {
+  try {
+    const keys = JSON.parse(localStorage.getItem(DEVICE_KEYS) || '{}');
+    if (key) keys[modelId] = key; else delete keys[modelId];
+    localStorage.setItem(DEVICE_KEYS, JSON.stringify(keys));
+  } catch (e) {}
+}
+function maskKey(k) { return k ? String(k).slice(0, 7) + '••••••' + String(k).slice(-4) : ''; }
+
 function renderProjects() {
   const sel = $('#projectSel');
   sel.innerHTML = '';
@@ -149,6 +163,12 @@ async function loadConfig() {
       ? rawTypes.map((t) => (typeof t === 'string' ? { id: t, name: t, prompt: t } : t))
       : Object.keys(rawTypes).map((k) => ({ id: k, name: k, prompt: rawTypes[k] }));
     state.models = cfg.models || [];
+
+    // BYOK：合并本机 localStorage 的 Key 状态（Key 不上云，每台设备各自配）
+    state.models.forEach((m) => {
+      const lk = getLocalKey(m.id);
+      if (lk && !m.hasKey) { m.hasKey = true; m.keyMask = maskKey(lk); }
+    });
 
     // 风格卡片（带缩略参考图）
     if (!state.style && state.styles.length) state.style = state.styles[0];
@@ -348,7 +368,7 @@ async function generate() {
     const resp = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ modelId: state.modelId, prompt, ratio: $('#ratioSel').value, n: 1, styleCardId: state.customStyleId || '' }),
+      body: JSON.stringify({ modelId: state.modelId, prompt, ratio: $('#ratioSel').value, n: 1, styleCardId: state.customStyleId || '', apiKey: getLocalKey(state.modelId) }),
     });
     const d = await resp.json();
     if (!resp.ok) throw new Error(d.error || ('HTTP ' + resp.status));
@@ -382,10 +402,11 @@ async function optimize() {
   btn.disabled = true;
   btn.textContent = '…';
   try {
+    const chat = state.models.find((m) => m.provider === 'chat');
     const resp = await fetch('/api/optimize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: desc }),
+      body: JSON.stringify({ text: desc, apiKey: chat ? getLocalKey(chat.id) : '' }),
     });
     const d = await resp.json();
     if (!resp.ok) throw new Error(d.error || '优化失败');
@@ -704,7 +725,8 @@ function readCardModel(idx) {
   const card = document.querySelector(`.model-card[data-idx="${idx}"]`);
   const g = (f) => card.querySelector(`[data-f="${f}"]`).value.trim();
   let apiKey = g('apiKey');
-  // Key 输入框留空时，回退到内存里暂存的 Key（新接入模型）
+  // BYOK：Key 输入框留空时，回退本机 localStorage，再回退内存临时 Key（新接入模型）
+  if (!apiKey) apiKey = getLocalKey(state.models[idx].id);
   if (!apiKey && state.models[idx] && state.models[idx].apiKey) apiKey = state.models[idx].apiKey;
   return {
     id: state.models[idx].id,
@@ -791,9 +813,18 @@ async function saveSettings() {
   const btn = $('#saveSettings');
   btn.disabled = true; btn.textContent = '保存中…';
   try {
+    // BYOK：Key 只存本机 localStorage（不上服务端），传服务端的 models 剥离 apiKey
+    const keys = {};
+    models.forEach((m) => { if (m.apiKey) keys[m.id] = m.apiKey; });
+    if (Object.keys(keys).length) {
+      const existing = JSON.parse(localStorage.getItem(DEVICE_KEYS) || '{}');
+      Object.assign(existing, keys);
+      localStorage.setItem(DEVICE_KEYS, JSON.stringify(existing));
+    }
+    const modelsForServer = models.map((m) => { const { apiKey, ...rest } = m; return rest; });
     const resp = await fetch('/api/config/save', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ models }),
+      body: JSON.stringify({ models: modelsForServer }),
     });
     const d = await resp.json();
     if (!resp.ok) throw new Error(d.error || '保存失败');
@@ -884,6 +915,8 @@ async function quickConnect() {
     $('#quickResult').innerHTML = `<div class="qc-msg fail">✗ ${esc(e.message)}</div>`;
   } finally {
     btn.disabled = false; btn.textContent = '接入并验证';
+    // BYOK：快速接入的 Key 立即存本机浏览器（Key 不上云）
+    state.models.forEach((m) => { if (m.apiKey) setLocalKey(m.id, m.apiKey); });
   }
 }
 $('#quickConnect').onclick = quickConnect;
@@ -942,7 +975,9 @@ function renderModelPicker(models, baseUrl, key) {
       const provider = t.type === 'image' ? 'openai' : 'chat';
       const exist = state.models.find((x) => x.baseUrl === baseUrl && x.model === t.id);
       if (exist) return;
-      state.models.push({ id: 'm_' + Date.now() + '_' + (added++), name: (t.type === 'image' ? '🎨 ' : '💬 ') + t.id, provider, baseUrl, model: t.id, apiKey: key, hasKey: true, verified: true });
+      const id = 'm_' + Date.now() + '_' + (added++);
+      state.models.push({ id, name: (t.type === 'image' ? '🎨 ' : '💬 ') + t.id, provider, baseUrl, model: t.id, apiKey: key, hasKey: true, verified: true });
+      setLocalKey(id, key);
     });
     closeModal();
     renderModelList();

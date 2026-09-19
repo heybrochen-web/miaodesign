@@ -285,3 +285,19 @@ select{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10
 .pl-id{font-size:10.5px;color:var(--sub);background:#f3f4f8;border-radius:5px;padding:1px 6px;font-family:Consolas,monospace}
 .pl-input{width:100%;min-height:56px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:12px;font-family:inherit;resize:vertical;color:var(--ink);line-height:1.6}
 .pl-input:focus{outline:none;border-color:var(--brand)}
+
+/* ---------- 登录弹窗 ---------- */
+.auth-mask{position:fixed;inset:0;background:rgba(18,24,40,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.auth-card{background:var(--card);border-radius:18px;width:min(430px,94vw);padding:26px;box-shadow:0 16px 50px rgba(0,0,0,.22)}
+.auth-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.auth-title{font-size:18px;font-weight:700;color:var(--ink)}
+.auth-sub{font-size:12.5px;color:var(--sub);line-height:1.7;margin:0 0 18px}
+.auth-step{display:flex;flex-direction:column;gap:9px;margin-bottom:6px}
+.auth-step label{font-size:12.5px;font-weight:600;color:var(--ink)}
+.auth-step input{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-size:14px;font-family:inherit;background:#fff}
+.auth-step input:focus{outline:none;border-color:var(--brand)}
+.auth-step .btn{width:100%}
+.auth-status{font-size:12.5px;min-height:20px;margin:8px 0 4px;color:var(--ok)}
+.auth-status.err{color:var(--err)}
+.auth-note{font-size:11.5px;color:var(--sub);margin:8px 0 0}
+#authBtn{white-space:nowrap}
