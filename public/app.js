@@ -1,7 +1,34 @@
 // AI 游戏素材平台 · 自用版前端逻辑
 const $ = (s) => document.querySelector(s);
 
+// ---------- 项目管理（历史/角色卡/画布按项目隔离） ----------
+const PROJECTS_KEY = 'aap_projects';
+const ACTIVE_PROJ_KEY = 'aap_activeProject';
+function loadProjects() {
+  let list = JSON.parse(localStorage.getItem(PROJECTS_KEY) || 'null');
+  if (!list || !list.length) {
+    list = [{ id: 'p_default', name: '默认项目', createdAt: Date.now() }];
+    localStorage.setItem(PROJECTS_KEY, JSON.stringify(list));
+  }
+  let active = localStorage.getItem(ACTIVE_PROJ_KEY);
+  if (!active || !list.some((p) => p.id === active)) active = list[0].id;
+  // 旧版单项目数据迁移到激活项目
+  if (!localStorage.getItem('aap_hist_' + active) && localStorage.getItem('aap_history')) {
+    localStorage.setItem('aap_hist_' + active, localStorage.getItem('aap_history'));
+    localStorage.removeItem('aap_history');
+  }
+  if (!localStorage.getItem('aap_roles_' + active) && localStorage.getItem('aap_roles')) {
+    localStorage.setItem('aap_roles_' + active, localStorage.getItem('aap_roles'));
+    localStorage.removeItem('aap_roles');
+  }
+  localStorage.setItem(ACTIVE_PROJ_KEY, active);
+  return { list, active };
+}
+const proj0 = loadProjects();
+
 const state = {
+  projects: proj0.list,
+  projectId: proj0.active,
   styles: [],
   assetTypes: [],
   models: [],
@@ -11,10 +38,73 @@ const state = {
   customStyles: [],
   customStyleId: '',
   pendingCard: null,
-  roles: JSON.parse(localStorage.getItem('aap_roles') || '[]'),
-  history: JSON.parse(localStorage.getItem('aap_history') || '[]'),
   modelTab: 'all',
+  roles: JSON.parse(localStorage.getItem('aap_roles_' + proj0.active) || '[]'),
+  history: JSON.parse(localStorage.getItem('aap_hist_' + proj0.active) || '[]'),
 };
+
+function histKey() { return 'aap_hist_' + state.projectId; }
+function rolesKey() { return 'aap_roles_' + state.projectId; }
+window.getAppProjectId = () => state.projectId;
+
+function renderProjects() {
+  const sel = $('#projectSel');
+  sel.innerHTML = '';
+  state.projects.forEach((p) => {
+    const o = document.createElement('option');
+    o.value = p.id;
+    o.textContent = p.name;
+    if (p.id === state.projectId) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+function switchProject(id) {
+  if (id === state.projectId) return;
+  state.projectId = id;
+  localStorage.setItem(ACTIVE_PROJ_KEY, id);
+  state.history = JSON.parse(localStorage.getItem(histKey()) || '[]');
+  state.roles = JSON.parse(localStorage.getItem(rolesKey()) || '[]');
+  renderGallery();
+  renderRoles();
+  updatePreview();
+  if (window.CV_onProjectSwitch) window.CV_onProjectSwitch();
+  const p = state.projects.find((x) => x.id === id);
+  toast('已切换到「' + (p ? p.name : id) + '」');
+}
+function newProject() {
+  const p = { id: 'p_' + Date.now(), name: '项目 ' + (state.projects.length + 1), createdAt: Date.now() };
+  state.projects.push(p);
+  localStorage.setItem(PROJECTS_KEY, JSON.stringify(state.projects));
+  renderProjects();
+  switchProject(p.id);
+}
+function renameProject() {
+  const p = state.projects.find((x) => x.id === state.projectId);
+  if (!p) return;
+  const name = window.prompt('重命名项目：', p.name);
+  if (name === null) return;
+  p.name = name.trim() || p.name;
+  localStorage.setItem(PROJECTS_KEY, JSON.stringify(state.projects));
+  renderProjects();
+  if (window.CV_onProjectSwitch) window.CV_onProjectSwitch();
+  toast('已重命名');
+}
+function delProject() {
+  if (state.projects.length <= 1) { toast('至少保留一个项目', true); return; }
+  const p = state.projects.find((x) => x.id === state.projectId);
+  if (!window.confirm('删除项目「' + p.name + '」？其生成历史、角色卡、画布内容将一并删除，不可恢复。')) return;
+  state.projects = state.projects.filter((x) => x.id !== p.id);
+  localStorage.setItem(PROJECTS_KEY, JSON.stringify(state.projects));
+  ['aap_hist_', 'aap_roles_', 'aap_canvas_'].forEach((k) => localStorage.removeItem(k + p.id));
+  const next = state.projects[0];
+  renderProjects();
+  switchProject(next.id);
+}
+$('#projectSel').onchange = (e) => switchProject(e.target.value);
+$('#projNew').onclick = newProject;
+$('#projRename').onclick = renameProject;
+$('#projDel').onclick = delProject;
+renderProjects();
 
 // ---------- 内置风格参考图 ----------
 // 内置风格参考图：AI 实拍图存于 /styles/{id}.png；SVG 示意图仅作加载失败兜底
@@ -225,7 +315,7 @@ function saveRole() {
   if (!name) { toast('角色名不能为空', true); return; }
   const i = state.roles.findIndex((r) => r.name === name);
   if (i >= 0) state.roles[i].desc = desc; else state.roles.push({ name, desc });
-  localStorage.setItem('aap_roles', JSON.stringify(state.roles));
+  localStorage.setItem(rolesKey(), JSON.stringify(state.roles));
   renderRoles();
   $('#roleSel').value = name;
   closeModal();
@@ -237,7 +327,7 @@ function delRole() {
   const name = $('#roleSel').value;
   if (!name) { toast('先选中要删的角色卡', true); return; }
   state.roles = state.roles.filter((r) => r.name !== name);
-  localStorage.setItem('aap_roles', JSON.stringify(state.roles));
+  localStorage.setItem(rolesKey(), JSON.stringify(state.roles));
   renderRoles();
   updatePreview();
   toast('已删除');
@@ -273,7 +363,7 @@ async function generate() {
       time: Date.now(),
     }));
     state.history = imgs.concat(state.history);
-    localStorage.setItem('aap_history', JSON.stringify(state.history));
+    localStorage.setItem(histKey(), JSON.stringify(state.history));
     renderGallery();
   } catch (e) {
     toast(e.message || '生成失败', true);
@@ -362,6 +452,7 @@ function renderGallery() {
         <button onclick="openLightbox(${idx})">放大</button>
         <button onclick="openImg(${idx})">打开</button>
         <button onclick="copyPrompt(${idx})">复制词</button>
+        <button onclick="cvAdd(${idx})" title="加入当前项目的画布">入画布</button>
         <button onclick="delImg(${idx})">删</button>
       </div>`;
     g.appendChild(card);
@@ -457,9 +548,16 @@ function stepLightbox(dir) {
 window.copyPrompt = (idx) => {
   navigator.clipboard.writeText(state.history[idx].prompt).then(() => toast('提示词已复制')).catch(() => toast('复制失败', true));
 };
-window.delImg = (idx) => { state.history.splice(idx, 1); localStorage.setItem('aap_history', JSON.stringify(state.history)); closeLightbox(); renderGallery(); };
-function clearHistory() { state.history = []; localStorage.setItem('aap_history', JSON.stringify(state.history)); renderGallery(); }
+window.delImg = (idx) => { state.history.splice(idx, 1); localStorage.setItem(histKey(), JSON.stringify(state.history)); closeLightbox(); renderGallery(); };
+function clearHistory() { state.history = []; localStorage.setItem(histKey(), JSON.stringify(state.history)); renderGallery(); }
 window.clearHistory = clearHistory;
+window.toastMsg = toast;
+window.cvAdd = (idx) => {
+  const im = state.history[idx];
+  if (!im || !im.src) { toast('该记录没有图片', true); return; }
+  if (window.CV_addFromHistory) window.CV_addFromHistory(im.src, im.desc || '');
+  else toast('画布模块未加载', true);
+};
 
 // ---------- 事件绑定 ----------
 $('#prompt').addEventListener('input', updatePreview);
