@@ -2,6 +2,12 @@
 
 本文件记录 miaodesign（AI 游戏素材平台）的版本演进。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [v1.3.1] - 2026-09-19
+
+### Changed
+- **画布改为独立跳转页**（参考即梦体验）：点「🗺️ 画布」从原来的覆盖层弹窗改为跳转到独立全屏画布页 `/canvas.html`，沉浸式素材拼贴空间；「入画布」按钮只负责把生成结果写入当前项目画布数据，不再依赖主页面内嵌覆盖层
+- 新增 `public/canvas.html`（独立画布页，含「返回生成台」「适应视图」「便签」「上传」等工具栏，Esc 返回）；`canvas.js` 重写为独立页版，通过 URL `?pid=` 或 localStorage 激活项目定位项目
+
 ## [v1.3.0] - 2026-09-19
 
 ### Added

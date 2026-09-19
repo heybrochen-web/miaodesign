@@ -573,11 +573,16 @@ window.delImg = (idx) => { state.history.splice(idx, 1); localStorage.setItem(hi
 function clearHistory() { state.history = []; localStorage.setItem(histKey(), JSON.stringify(state.history)); renderGallery(); }
 window.clearHistory = clearHistory;
 window.toastMsg = toast;
+// 「入画布」：把生成结果写入当前项目的画布数据（画布是独立页，这里只负责落库）
 window.cvAdd = (idx) => {
   const im = state.history[idx];
   if (!im || !im.src) { toast('该记录没有图片', true); return; }
-  if (window.CV_addFromHistory) window.CV_addFromHistory(im.src, im.desc || '');
-  else toast('画布模块未加载', true);
+  const ck = 'aap_canvas_' + state.projectId;
+  let nodes = [];
+  try { nodes = JSON.parse(localStorage.getItem(ck) || '[]'); } catch (e) {}
+  nodes.push({ id: 'n_' + Date.now() + '_' + Math.floor(Math.random() * 1e4), type: 'image', src: im.src, cap: im.desc || '', x: 40 + (nodes.length % 6) * 48, y: 40 + (nodes.length % 6) * 48, w: 220 });
+  localStorage.setItem(ck, JSON.stringify(nodes));
+  toast('已加入画布，点右上角「🗺️ 画布」查看');
 };
 
 // ---------- 事件绑定 ----------
@@ -587,6 +592,7 @@ $('#optimizeBtn').onclick = optimize;
 $('#addRole').onclick = addRole;
 $('#delRole').onclick = delRole;
 $('#clearBtn').onclick = (e) => { e.preventDefault(); clearHistory(); };
+$('#canvasBtn').onclick = () => { location.href = '/canvas.html?pid=' + state.projectId; };
 
 // ---------- 启动 ----------
 loadConfig().then(() => {

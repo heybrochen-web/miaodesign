@@ -1,17 +1,20 @@
-// 自由画布（素材拼贴）：平移/缩放/图片与便签节点/拖拽/自动保存（按项目隔离）
+// 自由画布（独立页版）：素材拼贴，平移/缩放/图片与便签节点/拖拽/自动保存（按项目隔离）
 (function () {
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const toast = (m, e) => { if (window.toastMsg) window.toastMsg(m, e); };
 
-  const st = { nodes: [], scale: 1, tx: 0, ty: 0, selected: null, pid: null, open: false };
-  const key = () => 'aap_canvas_' + st.pid;
-
-  function ensurePid() {
-    const pid = window.getAppProjectId ? window.getAppProjectId() : 'p_default';
-    if (pid !== st.pid) { st.pid = pid; st.nodes = JSON.parse(localStorage.getItem(key()) || '[]'); st.selected = null; }
+  // ---------- 项目 id 解析：URL ?pid= 优先，其次 localStorage 激活项目，兜底默认 ----------
+  function resolvePid() {
+    const q = new URLSearchParams(location.search).get('pid');
+    if (q) return q;
+    try { return localStorage.getItem('aap_activeProject') || 'p_default'; } catch (e) { return 'p_default'; }
   }
-  function save() { ensurePid(); localStorage.setItem(key(), JSON.stringify(st.nodes)); }
+  const PID = resolvePid();
+  const key = () => 'aap_canvas_' + PID;
+
+  const st = { nodes: JSON.parse(localStorage.getItem(key()) || '[]'), scale: 1, tx: 0, ty: 0, selected: null, pid: PID };
+
+  function save() { localStorage.setItem(key(), JSON.stringify(st.nodes)); }
 
   // ---------- 渲染 ----------
   function applyTransform() {
@@ -27,6 +30,7 @@
   function nodeEl(n) {
     const el = document.createElement('div');
     el.className = 'cv-node' + (n.type === 'note' ? ' cv-note' : '') + (st.selected === n.id ? ' sel' : '');
+    el.dataset.id = n.id;
     el.style.left = n.x + 'px';
     el.style.top = n.y + 'px';
     el.style.width = (n.w || 220) + 'px';
@@ -106,14 +110,12 @@
     };
   }
   function addImage(src, cap, w) {
-    ensurePid();
     const width = w || 220;
     const p = centerPos(width);
     st.nodes.push({ id: 'n_' + Date.now() + '_' + Math.floor(Math.random() * 1e4), type: 'image', src, cap: cap || '', x: p.x, y: p.y, w: width });
     save(); render();
   }
   function addNote() {
-    ensurePid();
     const p = centerPos(200);
     st.nodes.push({ id: 'n_' + Date.now() + '_' + Math.floor(Math.random() * 1e4), type: 'note', text: '', x: p.x, y: p.y, w: 200 });
     save(); render();
@@ -135,20 +137,10 @@
     st.ty = (rect.height - (maxY - minY) * s) / 2 - minY * s;
     applyTransform();
   }
+  function goBack() { location.href = '/'; }
 
-  // ---------- 开关与外部接口 ----------
-  function open() {
-    ensurePid();
-    st.open = true;
-    $('#canvasMask').style.display = 'flex';
-    const p = (JSON.parse(localStorage.getItem('aap_projects') || '[]')).find((x) => x.id === st.pid);
-    $('#canvasProjName').textContent = p ? p.name : '';
-    render();
-  }
-  function close() { st.open = false; $('#canvasMask').style.display = 'none'; }
-
-  $('#canvasBtn').onclick = open;
-  $('#cvClose').onclick = close;
+  // ---------- 绑定 ----------
+  $('#cvBack').onclick = goBack;
   $('#cvAddNote').onclick = addNote;
   $('#cvUpload').onclick = () => $('#cvFile').click();
   $('#cvFile').addEventListener('change', (e) => {
@@ -163,19 +155,26 @@
   $('#cvZoomOut').onclick = () => { const r = vp.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1 / 1.2); };
   $('#cvFit').onclick = fitView;
   $('#cvClear').onclick = () => { if (!st.nodes.length) return; if (window.confirm('清空画布上所有内容？')) { st.nodes = []; st.selected = null; save(); render(); } };
-  $('#canvasMask').addEventListener('click', (e) => { if (e.target === $('#canvasMask')) close(); });
 
   document.addEventListener('keydown', (e) => {
-    if (!st.open) return;
-    if (e.key === 'Escape') close();
-    else if ((e.key === 'Delete' || e.key === 'Backspace') && st.selected && document.activeElement.tagName !== 'TEXTAREA') {
+    if (e.key === 'Escape') { goBack(); return; }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && st.selected && document.activeElement.tagName !== 'TEXTAREA') {
       st.nodes = st.nodes.filter((x) => x.id !== st.selected);
       st.selected = null;
       save(); render();
     }
   });
 
-  // 供 app.js 调用
-  window.CV_addFromHistory = (src, cap) => { addImage(src, cap); toast(st.open ? '已加入画布' : '已加入画布（点右上角「🗺️ 画布」查看）'); };
-  window.CV_onProjectSwitch = () => { if (st.open) { ensurePid(); const p = (JSON.parse(localStorage.getItem('aap_projects') || '[]')).find((x) => x.id === st.pid); $('#canvasProjName').textContent = p ? p.name : ''; render(); } };
+  // ---------- 初始化：显示项目名 + 渲染 + 有内容则自适应视图 ----------
+  (function init() {
+    let pname = '';
+    try {
+      const projs = JSON.parse(localStorage.getItem('aap_projects') || '[]');
+      const p = projs.find((x) => x.id === PID);
+      if (p) pname = p.name;
+    } catch (e) {}
+    $('#canvasProjName').textContent = pname || PID;
+    render();
+    if (st.nodes.length) setTimeout(fitView, 60);
+  })();
 })();

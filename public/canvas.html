@@ -1,0 +1,34 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>画布 · AI 游戏素材平台</title>
+<link rel="stylesheet" href="style.css">
+</head><body>
+<div class="canvas-mask">
+  <div class="canvas-head">
+    <span class="canvas-title">🗺️ 画布 · <b id="canvasProjName"></b></span>
+    <div class="canvas-tools">
+      <button class="mini" id="cvBack">← 返回生成台</button>
+      <span class="cv-sep"></span>
+      <button class="mini" id="cvAddNote">📝 便签</button>
+      <button class="mini" id="cvUpload">🖼️ 上传图片</button>
+      <input type="file" id="cvFile" accept="image/*" multiple style="display:none">
+      <span class="cv-sep"></span>
+      <button class="mini" id="cvZoomOut">－</button>
+      <span id="cvZoomLabel">100%</span>
+      <button class="mini" id="cvZoomIn">＋</button>
+      <button class="mini" id="cvFit">适应视图</button>
+      <span class="cv-sep"></span>
+      <button class="mini" id="cvClear">清空</button>
+    </div>
+  </div>
+  <div class="canvas-hint">空白处拖动 = 平移　·　滚轮 = 缩放　·　拖动节点移动　·　双击图片看原图　·　Delete 删除选中　·　Esc 返回</div>
+  <div class="canvas-viewport" id="cvViewport">
+    <div class="canvas-world" id="cvWorld"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+<script src="sync.js"></script>
+<script src="canvas.js"></script>
+</body></html>
