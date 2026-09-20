@@ -13,3 +13,4 @@ desktop.ini
 # 依赖与构建
 node_modules/
 dist/
+assets_orig/

@@ -121,14 +121,14 @@ $('#projDel').onclick = delProject;
 renderProjects();
 
 // ---------- 内置风格参考图 ----------
-// 内置风格参考图：AI 实拍图存于 /styles/{id}.png；SVG 示意图仅作加载失败兜底
+// 内置风格参考图：320px WebP 缩略图存于 /styles/{id}.webp（原图备份于项目 assets_orig/）；SVG 示意图仅作加载失败兜底
 const STYLE_THUMB_FALLBACK = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" fill="#eef1f6"/></svg>');
 function styleThumb(id) {
-  return '/styles/' + id + '.png';
+  return '/styles/' + id + '.webp';
 }
-// 素材类型参考图：AI 实拍图存于 /assettypes/{id}.png
+// 素材类型参考图：320px WebP 缩略图存于 /assettypes/{id}.webp
 function typeThumb(id) {
-  return '/assettypes/' + id + '.png';
+  return '/assettypes/' + id + '.webp';
 }
 
 // ---------- 基础 UI ----------
